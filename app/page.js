@@ -563,8 +563,8 @@ Return ONLY a JSON object:
           setTop10Report(obj.summary && obj.picks ? obj : { error: true });
         } else { setTop10Report({ error: true }); }
       } else { setTop10Report({ error: true }); }
-    } catch {
-      setTop10Report({ error: true });
+    } catch (err) {
+      setTop10Report({ error: true, detail: String(err) });
     }
     setTop10Loading(false);
   }
@@ -745,9 +745,12 @@ Return ONLY a JSON object:
             )}
 
             {top10Report?.error && (
-              <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:10, padding:"1rem", textAlign:"center", color:"#94a3b8", fontSize:13 }}>
-                Could not generate recommendations — check your API connection.
-                <button onClick={generateTop10} style={{ marginLeft:8, fontSize:12, color:"#2563eb", background:"none", border:"none", cursor:"pointer" }}>Try again</button>
+              <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:10, padding:"1rem", color:"#94a3b8", fontSize:13 }}>
+                <div style={{ marginBottom:8 }}>Could not generate recommendations. Debug info:</div>
+                <pre style={{ fontSize:11, background:"#f8fafc", padding:"8px", borderRadius:6, overflowX:"auto", color:"#334155", whiteSpace:"pre-wrap", wordBreak:"break-all" }}>
+                  {JSON.stringify(top10Report, null, 2)}
+                </pre>
+                <button onClick={generateTop10} style={{ marginTop:8, fontSize:12, color:"#2563eb", background:"none", border:"none", cursor:"pointer" }}>Try again</button>
               </div>
             )}
           </div>

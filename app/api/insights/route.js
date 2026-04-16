@@ -14,5 +14,28 @@ export async function POST(req) {
     }),
   });
   const data = await res.json();
-  return Response.json(data);
+
+  // Extract raw text from response
+  const raw = data.content?.map(b => b.text || "").join("") || "";
+
+  // Aggressively strip markdown formatting
+  const cleaned = raw
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // Find the JSON object within the response
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+
+  if (start === -1 || end === -1) {
+    return Response.json({ error: "No JSON found in response", raw });
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned.slice(start, end + 1));
+    return Response.json(parsed);
+  } catch (e) {
+    return Response.json({ error: "Failed to parse JSON", raw });
+  }
 }

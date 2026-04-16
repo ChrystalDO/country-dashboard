@@ -495,10 +495,15 @@ IDs: ${top.map(d=>d.id).join(", ")}`;
       });
       const data = await res.json();
       const raw = data.content?.map(b=>b.text||"").join("")||"[]";
-      const parsed = JSON.parse(raw.replace(/```json|```/g,"").trim());
-      const map = {};
-      parsed.forEach(x => { map[x.id] = x; });
-      setAiMap(map);
+      const clean = raw.replace(/```json|```/g,"").trim();
+      const start = clean.indexOf("[");
+      const end = clean.lastIndexOf("]");
+      if (start !== -1 && end !== -1) {
+        const parsed = JSON.parse(clean.slice(start, end + 1));
+        const map = {};
+        parsed.forEach(x => { map[x.id] = x; });
+        setAiMap(map);
+      }
     } catch { setAiMap({}); }
 
     setHasRun(true); setLoading(false);
@@ -541,20 +546,28 @@ Return ONLY a JSON object:
   "actNow": {"name": "...", "reason": "..."}
 }`;
 
-try {
-  const res = await fetch("/api/insights", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
-  });
-  const parsed = await res.json();
-  if (parsed.summary && parsed.picks && parsed.actNow) {
-    setTop10Report(parsed);
-  } else {
-    setTop10Report({ error: true });
+    try {
+      const res = await fetch("/api/insights", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, parseAs: "object" }),
+      });
+      if (!res.ok) { setTop10Report({ error: true }); setTop10Loading(false); return; }
+      const parsed = await res.json();
+      if (parsed.summary && parsed.picks && parsed.actNow) {
+        setTop10Report(parsed);
+      } else if (parsed.raw) {
+        const clean = parsed.raw.replace(/```json|```/g, "").trim();
+        const s = clean.indexOf("{"); const e = clean.lastIndexOf("}");
+        if (s !== -1 && e !== -1) {
+          const obj = JSON.parse(clean.slice(s, e + 1));
+          setTop10Report(obj.summary && obj.picks ? obj : { error: true });
+        } else { setTop10Report({ error: true }); }
+      } else { setTop10Report({ error: true }); }
+    } catch {
+      setTop10Report({ error: true });
+    }
+    setTop10Loading(false);
   }
-} catch {
-  setTop10Report({ error: true });
-}
 
   const filtered = scored
     .filter(d => regionFilter === "all" || d.regionId === regionFilter)
@@ -593,7 +606,7 @@ try {
               <select
                 value={depCode}
                 onChange={handleDepChange}
-                style={{ fontSize:28, fontWeight:700, color:"#fff", background:"transparent", border:"none", outline:"none", cursor:"pointer", letterSpacing:"-0.02em", appearance:"none", WebkitAppearance:"none", paddingRight:28 }}
+                style={{ fontSize:18, fontWeight:700, color:"#fff", background:"transparent", border:"none", outline:"none", cursor:"pointer", letterSpacing:"-0.01em", appearance:"none", WebkitAppearance:"none", paddingRight:28 }}
               >
                 {DEPARTURES.map(d => <option key={d.code} value={d.code} style={{ background:"#1e293b", color:"#fff", fontSize:16 }}>{d.label}</option>)}
               </select>

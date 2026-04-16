@@ -546,10 +546,8 @@ Return ONLY a JSON object:
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-      const data = await res.json();
-      const raw = data.content?.map(b => b.text || "").join("") || "{}";
-      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-      setTop10Report(parsed);
+const parsed = await res.json();
+setTop10Report(parsed);
     } catch {
       setTop10Report({ error: true });
     }

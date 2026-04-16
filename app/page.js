@@ -541,18 +541,20 @@ Return ONLY a JSON object:
   "actNow": {"name": "...", "reason": "..."}
 }`;
 
-    try {
-      const res = await fetch("/api/insights", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-const parsed = await res.json();
-setTop10Report(parsed);
-    } catch {
-      setTop10Report({ error: true });
-    }
-    setTop10Loading(false);
+try {
+  const res = await fetch("/api/insights", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  const parsed = await res.json();
+  if (parsed.summary && parsed.picks && parsed.actNow) {
+    setTop10Report(parsed);
+  } else {
+    setTop10Report({ error: true });
   }
+} catch {
+  setTop10Report({ error: true });
+}
 
   const filtered = scored
     .filter(d => regionFilter === "all" || d.regionId === regionFilter)
